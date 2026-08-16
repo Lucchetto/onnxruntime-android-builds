@@ -1,0 +1,123 @@
+name: Create ONNX Runtime artifact
+
+on: 
+  workflow_call:
+    outputs:
+      artifact-name: 
+        description: 'Generated artifact''s name'
+        value: ${{ jobs.package.outputs.artifact-name }}
+
+jobs:
+
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        abi: [armeabi-v7a, x86_64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (required for Android builds)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Python 3.11.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.11'
+      
+      - name: Load config env
+        run: cat config.env >> $GITHUB_ENV
+
+      - name: Set up Android SDK ${{ env.ANDROID_SDK_VERSION }}
+        uses: android-actions/setup-android@v3
+
+      - name: Install required Android SDK components
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-${{ env.ANDROID_SDK_VERSION }}" "build-tools;${{ env.ANDROID_SDK_VERSION }}.0.0"
+
+      - name: Install Android NDK ${{ env.ANDROID_NDK_VERSION }}
+        run: |
+          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
+          echo "NDK_ROOT=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
+
+      - name: Install patch utility and ninja-build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patch ninja-build
+
+      - name: Get repository name
+        run: |
+          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ env.REPO_NAME }}_android_${{ matrix.abi }}
+          max-size: 1024M
+
+      - name: Clone ONNX Runtime at version ${{ env.ONNXRUNTIME_VERSION }}
+        run: |
+          git clone --branch v${{ env.ONNXRUNTIME_VERSION }} --depth 1 https://github.com/microsoft/onnxruntime.git
+
+      - name: Build ONNX Runtime for Android ${{ matrix.abi }}
+        env:
+          CCACHE_COMPILERCHECK: content
+        run: |
+          python3 tools/ci_build/build.py --build_shared_lib --skip_submodule_sync --android \
+            --config Release \
+            --android_sdk_path ${{ env.ANDROID_HOME }} \
+            --android_ndk_path ${{ env.ANDROID_HOME }}/ndk/${{ env.ANDROID_NDK_VERSION }} \
+            --android_abi ${{ matrix.abi }} --android_api ${{ env.ANDROID_MIN_SDK_VERSION }} \
+            --cmake_generator Ninja --allow_running_as_root --use_cache \
+            --build_dir build/android/${{ matrix.abi }}
+        working-directory: onnxruntime
+
+      - name: Stage library
+        run: |
+          mkdir -p staging/${{ matrix.abi }}
+          cp onnxruntime/build/android/${{ matrix.abi }}/Release/libonnxruntime.so staging/${{ matrix.abi }}/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.REPO_NAME }}_${{ matrix.abi }}_${{ github.sha }}
+          path: staging/
+
+  package:
+    needs: build
+    runs-on: ubuntu-22.04
+    outputs:
+      artifact-name: ${{ steps.set-outputs.outputs.artifact-name }}
+
+    steps:
+      - name: Get repository name
+        run: |
+          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ env.REPO_NAME }}_*_${{ github.sha }}
+          merge-multiple: true
+          path: libs
+
+      - name: Zip the files
+        run: |
+          cd libs
+          zip -r ../onnxruntime-android.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.REPO_NAME }}_${{ github.sha }}
+          path: onnxruntime-android.zip
+
+      - name: Set outputs
+        id: set-outputs
+        run: echo "artifact-name=${REPO_NAME}_${GITHUB_SHA}" >> $GITHUB_OUTPUT
