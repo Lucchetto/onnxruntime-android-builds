@@ -70,7 +70,7 @@ jobs:
           CCACHE_COMPILERCHECK: content
         run: |
           python3 tools/ci_build/build.py --build_shared_lib --skip_submodule_sync --android \
-            --config Release \
+            --config RelWithDebInfo \
             --android_sdk_path ${{ env.ANDROID_HOME }} \
             --android_ndk_path ${{ env.ANDROID_HOME }}/ndk/${{ env.ANDROID_NDK_VERSION }} \
             --android_abi ${{ matrix.abi }} --android_api ${{ env.ANDROID_MIN_SDK_VERSION }} \
@@ -83,7 +83,7 @@ jobs:
       - name: Stage library
         run: |
           mkdir -p staging/${{ matrix.abi }}
-          cp onnxruntime/build/android/${{ matrix.abi }}/Release/libonnxruntime.so staging/${{ matrix.abi }}/
+          cp onnxruntime/build/android/${{ matrix.abi }}/RelWithDebInfo/libonnxruntime.so staging/${{ matrix.abi }}/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
