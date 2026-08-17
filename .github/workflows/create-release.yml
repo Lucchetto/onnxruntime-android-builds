@@ -1,0 +1,37 @@
+name: Create ONNX Runtime release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  create-onnx-runtime-artifact:
+    uses: ./.github/workflows/create-onnx-runtime-artifact.yml
+  
+  release:
+    needs: create-onnx-runtime-artifact
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load config env
+        run: cat config.env >> $GITHUB_ENV
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.create-onnx-runtime-artifact.outputs.artifact-name }}
+          path: artifact-content
+      
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifact-content/**
+          draft: true
+          body: |
+            ONNX Runtime version: ${{ env.ONNXRUNTIME_VERSION }}
+            Minimum Android SDK version: ${{ env.ANDROID_MIN_SDK_VERSION }}
+  
