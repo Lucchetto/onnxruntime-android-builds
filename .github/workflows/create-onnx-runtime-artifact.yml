@@ -109,16 +109,11 @@ jobs:
           merge-multiple: true
           path: libs
 
-      - name: Zip the files
-        run: |
-          cd libs
-          zip -r ../onnxruntime-android.zip .
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.REPO_NAME }}_${{ github.sha }}
-          path: onnxruntime-android.zip
+          path: libs/
 
       - name: Set outputs
         id: set-outputs
