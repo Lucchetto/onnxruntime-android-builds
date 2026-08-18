@@ -12,6 +12,9 @@ The following Android ABIs are built:
 - `armeabi-v7a`
 - `x86_64`
 
+# Telemetry
+Telemetry is disabled in these builds. No usage data is collected or sent by the binaries published here.
+
 # Releases
 
 The current release and past releases of the binaries can be found here: https://github.com/Lucchetto/onnxruntime-android-builds/releases.
