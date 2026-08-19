@@ -19,3 +19,11 @@ The binaries are built with the `RelWithDebInfo` configuration, which provides o
 # Releases
 
 The current release and past releases of the binaries can be found here: https://github.com/Lucchetto/onnxruntime-android-builds/releases.
+
+Each release provides a single archive named `onnxruntime-android-<version>.zip` containing the shared library for every supported ABI:
+
+```
+onnxruntime-android-<version>.zip
+├── armeabi-v7a/libonnxruntime.so
+└── x86_64/libonnxruntime.so
+```

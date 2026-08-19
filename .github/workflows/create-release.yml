@@ -25,11 +25,16 @@ jobs:
         with:
           name: ${{ needs.create-onnx-runtime-artifact.outputs.artifact-name }}
           path: artifact-content
-      
+
+      - name: Create archive
+        run: |
+          cd artifact-content
+          zip -r "../onnxruntime-android-${{ env.ONNXRUNTIME_VERSION }}.zip" .
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifact-content/**
+          files: onnxruntime-android-${{ env.ONNXRUNTIME_VERSION }}.zip
           draft: true
           body: |
             ONNX Runtime version: ${{ env.ONNXRUNTIME_VERSION }}
