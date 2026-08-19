@@ -12,10 +12,6 @@ The following Android ABIs are built:
 - `armeabi-v7a`
 - `x86_64`
 
-# Build configuration
-
-The binaries are built with the `RelWithDebInfo` configuration, which provides optimised code with debug symbols included.
-
 # Releases
 
 The current release and past releases of the binaries can be found here: https://github.com/Lucchetto/onnxruntime-android-builds/releases.
