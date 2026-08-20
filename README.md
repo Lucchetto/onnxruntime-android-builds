@@ -12,9 +12,8 @@ The following Android ABIs are built:
 - `armeabi-v7a`
 - `x86_64`
 
-# Build configuration
-
-The binaries are built with the `RelWithDebInfo` configuration, which provides optimised code with debug symbols included.
+# Telemetry
+Telemetry is disabled in these builds. No usage data is collected or sent by the binaries published here.
 
 # Releases
 
